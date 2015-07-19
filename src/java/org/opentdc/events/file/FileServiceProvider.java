@@ -37,16 +37,14 @@ import javax.servlet.ServletContext;
 
 import org.opentdc.file.AbstractFileServiceProvider;
 import org.opentdc.events.EventsModel;
+import org.opentdc.events.InvitationState;
+import org.opentdc.events.SalutationType;
 import org.opentdc.events.ServiceProvider;
 import org.opentdc.service.exception.DuplicateException;
 import org.opentdc.service.exception.InternalServerErrorException;
 import org.opentdc.service.exception.NotFoundException;
 import org.opentdc.service.exception.ValidationException;
 import org.opentdc.util.PrettyPrinter;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * A file-based or transient implementation of the Events service.
@@ -124,11 +122,24 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 			}
 		}
 		// enforce mandatory fields
-		if (event.getTitle() == null || event.getTitle().length() == 0) {
+		if (event.getFirstName() == null || event.getFirstName().length() == 0) {
 			throw new ValidationException("event <" + _id + 
-					"> must contain a valid title.");
+					"> must contain a valid firstName.");
 		}
-
+		if (event.getLastName() == null || event.getLastName().length() == 0) {
+			throw new ValidationException("event <" + _id + 
+					"> must contain a valid lastName.");
+		}
+		if (event.getEmail() == null || event.getEmail().length() == 0) {
+			throw new ValidationException("event <" + _id + 
+					"> must contain a valid email address.");
+		}
+		if (event.getInvitationState() == null) {
+			event.setInvitationState(InvitationState.INITIAL);
+		}
+		if (event.getSalutation() == null) {
+			event.setSalutation(SalutationType.DU_M);
+		}
 		event.setId(_id);
 		Date _date = new Date();
 		event.setCreatedAt(_date);
@@ -180,8 +191,30 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 			logger.warning("event <" + id + ">: ignoring createdBy value <" + event.getCreatedBy() +
 					"> because it was set on the client.");
 		}
-		_event.setTitle(event.getTitle());
-		_event.setDescription(event.getDescription());
+		if (event.getFirstName() == null || event.getFirstName().length() == 0) {
+			throw new ValidationException("event <" + id + 
+					"> must contain a valid firstName.");
+		}
+		if (event.getLastName() == null || event.getLastName().length() == 0) {
+			throw new ValidationException("event <" + id + 
+					"> must contain a valid lastName.");
+		}
+		if (event.getEmail() == null || event.getEmail().length() == 0) {
+			throw new ValidationException("event <" + id + 
+					"> must contain a valid email address.");
+		}
+		if (event.getInvitationState() == null) {
+			event.setInvitationState(InvitationState.INITIAL);
+		}
+		if (event.getSalutation() == null) {
+			event.setSalutation(SalutationType.DU_M);
+		}
+		_event.setFirstName(event.getFirstName());
+		_event.setLastName(event.getLastName());
+		_event.setEmail(event.getEmail());
+		_event.setSalutation(event.getSalutation());
+		_event.setInvitationState(event.getInvitationState());
+		_event.setComment(event.getComment());
 		_event.setModifiedAt(new Date());
 		_event.setModifiedBy(getPrincipal());
 		index.put(id, _event);
