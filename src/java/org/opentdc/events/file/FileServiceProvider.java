@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 
 import org.opentdc.file.AbstractFileServiceProvider;
-import org.opentdc.events.EventsModel;
+import org.opentdc.events.EventModel;
 import org.opentdc.events.InvitationState;
 import org.opentdc.events.SalutationType;
 import org.opentdc.events.ServiceProvider;
@@ -51,9 +51,9 @@ import org.opentdc.util.PrettyPrinter;
  * @author Bruno Kaiser
  *
  */
-public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel> implements ServiceProvider {
+public class FileServiceProvider extends AbstractFileServiceProvider<EventModel> implements ServiceProvider {
 	
-	private static Map<String, EventsModel> index = null;
+	private static Map<String, EventModel> index = null;
 	private static final Logger logger = Logger.getLogger(FileServiceProvider.class.getName());
 
 	/**
@@ -68,9 +68,9 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 	) throws IOException {
 		super(context, prefix);
 		if (index == null) {
-			index = new HashMap<String, EventsModel>();
-			List<EventsModel> _events = importJson();
-			for (EventsModel _event : _events) {
+			index = new HashMap<String, EventModel>();
+			List<EventModel> _events = importJson();
+			for (EventModel _event : _events) {
 				index.put(_event.getId(), _event);
 			}
 			logger.info(_events.size() + " Events imported.");
@@ -81,15 +81,15 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 	 * @see org.opentdc.events.ServiceProvider#list(java.lang.String, java.lang.String, long, long)
 	 */
 	@Override
-	public ArrayList<EventsModel> list(
+	public ArrayList<EventModel> list(
 		String queryType,
 		String query,
 		int position,
 		int size
 	) {
-		ArrayList<EventsModel> _events = new ArrayList<EventsModel>(index.values());
-		Collections.sort(_events, EventsModel.EventComparator);
-		ArrayList<EventsModel> _selection = new ArrayList<EventsModel>();
+		ArrayList<EventModel> _events = new ArrayList<EventModel>(index.values());
+		Collections.sort(_events, EventModel.EventComparator);
+		ArrayList<EventModel> _selection = new ArrayList<EventModel>();
 		for (int i = 0; i < _events.size(); i++) {
 			if (i >= position && i < (position + size)) {
 				_selection.add(_events.get(i));
@@ -104,8 +104,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 	 * @see org.opentdc.events.ServiceProvider#create(org.opentdc.events.EventsModel)
 	 */
 	@Override
-	public EventsModel create(
-		EventsModel event) 
+	public EventModel create(
+		EventModel event) 
 	throws DuplicateException, ValidationException {
 		logger.info("create(" + PrettyPrinter.prettyPrintAsJSON(event) + ")");
 		String _id = event.getId();
@@ -158,10 +158,10 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 	 * @see org.opentdc.events.ServiceProvider#read(java.lang.String)
 	 */
 	@Override
-	public EventsModel read(
+	public EventModel read(
 		String id) 
 	throws NotFoundException {
-		EventsModel _event = index.get(id);
+		EventModel _event = index.get(id);
 		if (_event == null) {
 			throw new NotFoundException("no event with ID <" + id
 					+ "> was found.");
@@ -174,11 +174,11 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 	 * @see org.opentdc.events.ServiceProvider#update(java.lang.String, org.opentdc.events.EventsModel)
 	 */
 	@Override
-	public EventsModel update(
+	public EventModel update(
 		String id, 
-		EventsModel event
+		EventModel event
 	) throws NotFoundException, ValidationException {
-		EventsModel _event = index.get(id);
+		EventModel _event = index.get(id);
 		if(_event == null) {
 			throw new NotFoundException("no event with ID <" + id
 					+ "> was found.");
@@ -232,7 +232,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventsModel
 	public void delete(
 		String id) 
 	throws NotFoundException, InternalServerErrorException {
-		EventsModel _event = index.get(id);
+		EventModel _event = index.get(id);
 		if (_event == null) {
 			throw new NotFoundException("event <" + id
 					+ "> was not found.");
