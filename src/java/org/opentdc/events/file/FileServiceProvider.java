@@ -246,4 +246,24 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 			exportJson(index.values());
 		}
 	}
+
+	@Override
+	public String getMessage(String id) throws NotFoundException,
+			InternalServerErrorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void sendMessage(String id) throws NotFoundException,
+			InternalServerErrorException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void sendAllMessages() throws InternalServerErrorException {
+		// TODO Auto-generated method stub
+		
+	}
 }
