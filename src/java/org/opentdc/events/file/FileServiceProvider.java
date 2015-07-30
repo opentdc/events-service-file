@@ -215,6 +215,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 		_event.setSalutation(event.getSalutation());
 		_event.setInvitationState(event.getInvitationState());
 		_event.setComment(event.getComment());
+		_event.setInternalComment(event.getInternalComment());
 		_event.setModifiedAt(new Date());
 		_event.setModifiedBy(getPrincipal());
 		index.put(id, _event);
