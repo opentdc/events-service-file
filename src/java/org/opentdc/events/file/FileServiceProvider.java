@@ -44,7 +44,11 @@ import org.opentdc.service.exception.DuplicateException;
 import org.opentdc.service.exception.InternalServerErrorException;
 import org.opentdc.service.exception.NotFoundException;
 import org.opentdc.service.exception.ValidationException;
+import org.opentdc.util.EmailSender;
+import org.opentdc.util.FreeMarkerConfig;
 import org.opentdc.util.PrettyPrinter;
+
+import freemarker.template.Template;
 
 /**
  * A file-based or transient implementation of the Events service.
@@ -55,6 +59,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	
 	private static Map<String, EventModel> index = null;
 	private static final Logger logger = Logger.getLogger(FileServiceProvider.class.getName());
+	private EmailSender emailSender = null;
+	private static final String SUBJECT = "Einladung zum Arbalo Launch Event";
 
 	/**
 	 * Constructor.
@@ -73,6 +79,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 			for (EventModel _event : _events) {
 				index.put(_event.getId(), _event);
 			}
+			new FreeMarkerConfig(context);
+			emailSender = new EmailSender(context);
 			logger.info(_events.size() + " Events imported.");
 		}
 	}
@@ -247,24 +255,170 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 			exportJson(index.values());
 		}
 	}
+	
+	/**
+	 * Retrieve the email address of the contact.
+	 * @param contactName the name of the contact
+	 * @return the corresponding email address
+	 */
+	private String getEmailAddress(String contactName) {
+		logger.info("getEmailAddress(" + contactName + ")");
+		String _emailAddress = null;
+		if (contactName == null || contactName.isEmpty()) {
+			contactName = "arbalo";
+		}
+	       if (contactName.equalsIgnoreCase("bruno")) {
+	        	_emailAddress = "bruno.kaiser@arbalo.ch";
+	        } else if (contactName.equalsIgnoreCase("thomas")) {
+	        	_emailAddress = "thomas.huber@arbalo.ch";
+	        } else if (contactName.equalsIgnoreCase("peter")) {
+	        	_emailAddress = "peter.windemann@arbalo.ch";
+	        } else if (contactName.equalsIgnoreCase("marc")) {
+	        	_emailAddress = "marc.hofer@arbalo.ch";
+	        } else if (contactName.equalsIgnoreCase("werner")) {
+	        	_emailAddress = "werner.froidevaux@arbalo.ch";        	
+	        } else {
+	        	_emailAddress = "info@arbalo.ch";        	        	
+	        }
+	        logger.info("getEmailAddress(" + contactName + ") -> " + _emailAddress);
+	        return _emailAddress;	
+	}
+	
+	/**
+	 * @param salutation
+	 * @return
+	 */
+	private Template getTemplate(
+			SalutationType salutation, String contactName) {
+		String _templateName = null;
+		if (contactName == null || contactName.isEmpty()) {
+			contactName = "arbalo";
+		}
+		switch (salutation) {
+		case HERR: _templateName = "emailHerr_" + contactName + ".ftl"; break;
+		case FRAU: _templateName = "emailFrau_" + contactName + ".ftl"; break;
+		case DU_F: _templateName = "emailDuf_" + contactName + ".ftl";  break;
+		case DU_M: _templateName = "emailDum_" + contactName + ".ftl";  break;
+		}
+		return FreeMarkerConfig.getTemplateByName(_templateName);
+	}
 
+
+	/* (non-Javadoc)
+	 * @see org.opentdc.events.ServiceProvider#getMessage(java.lang.String)
+	 */
 	@Override
 	public String getMessage(String id) throws NotFoundException,
 			InternalServerErrorException {
-		// TODO Auto-generated method stub
-		return null;
+		logger.info("getMessage(" + id + ")");
+		EventModel _model = read(id);
+		
+		// create the FreeMarker data model
+        Map<String, Object> _root = new HashMap<String, Object>();    
+        _root.put("event", _model);
+        
+        // Merge data model with template   
+        String _msg = FreeMarkerConfig.getProcessedTemplate(
+        		_root, 
+        		getTemplate(_model.getSalutation(), _model.getContact()));
+		logger.info("getMessage(" + id + ") -> " + _msg);
+		return _msg;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.opentdc.events.ServiceProvider#sendMessage(java.lang.String)
+	 */
 	@Override
 	public void sendMessage(String id) throws NotFoundException,
 			InternalServerErrorException {
-		// TODO Auto-generated method stub
-		
+		logger.info("sendMessage(" + id + ")");
+		EventModel _model = read(id);
+
+		emailSender.sendMessage(
+			_model.getEmail(),
+			getEmailAddress(_model.getContact()),
+			SUBJECT,
+			getMessage(id));
+		logger.info("sent email message to " + _model.getEmail());
+		_model.setId(null);
+		_model.setInvitationState(InvitationState.SENT);
+		update(id, _model);
 	}
 
+	/* (non-Javadoc)
+	 * @see org.opentdc.events.ServiceProvider#sendAllMessages()
+	 */
 	@Override
 	public void sendAllMessages() throws InternalServerErrorException {
-		// TODO Auto-generated method stub
-		
+		logger.info("sendAllMessages()");
+		for (EventModel _model : index.values()) {
+			emailSender.sendMessage(
+				_model.getEmail(),
+				getEmailAddress(_model.getContact()),
+				SUBJECT,
+				getMessage(_model.getId()));
+			logger.info("sent email message to " + _model.getEmail());
+			_model.setId(null);
+			_model.setInvitationState(InvitationState.SENT);
+			update(_model.getId(), _model);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException _ex) {
+				_ex.printStackTrace();
+				throw new InternalServerErrorException(_ex.getMessage());
+			}
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see org.opentdc.events.ServiceProvider#register(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void register(
+			String id,
+			String comment) 
+	throws NotFoundException, ValidationException {
+		EventModel _event = read(id);
+		if (_event.getInvitationState() == InvitationState.INITIAL) {
+			throw new ValidationException("invitation <" + id + "> must be sent before being able to register");
+		}
+		if (_event.getInvitationState() == InvitationState.REGISTERED) {
+			logger.warning("invitation <" + id + "> is already registered; ignoring re-registration");
+		}
+		_event.setInvitationState(InvitationState.REGISTERED);
+		_event.setComment(comment);
+		_event.setModifiedAt(new Date());
+		_event.setModifiedBy(getPrincipal());
+		index.put(id, _event);
+		logger.info("register(" + id + ", " + comment + ") -> " + PrettyPrinter.prettyPrintAsJSON(_event));
+		if (isPersistent) {
+			exportJson(index.values());
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see org.opentdc.events.ServiceProvider#deregister(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void deregister(
+			String id,
+			String comment) 
+	throws NotFoundException, ValidationException {
+		EventModel _event = read(id);
+		if (_event.getInvitationState() == InvitationState.INITIAL) {
+			throw new ValidationException("invitation <" + id + "> must be sent before being able to deregister");
+		}
+		if (_event.getInvitationState() == InvitationState.EXCUSED) {
+			logger.warning("invitation <" + id + "> is already excused; ignoring deregistration");
+		}
+		_event.setInvitationState(InvitationState.EXCUSED);
+		_event.setComment(comment);
+		_event.setModifiedAt(new Date());
+		_event.setModifiedBy(getPrincipal());
+		index.put(id, _event);
+		logger.info("deregister(" + id + ", " + comment + ") -> " + PrettyPrinter.prettyPrintAsJSON(_event));
+		if (isPersistent) {
+			exportJson(index.values());
+		}
 	}
 }
