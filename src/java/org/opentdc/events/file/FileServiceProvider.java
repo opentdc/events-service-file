@@ -25,30 +25,28 @@ package org.opentdc.events.file;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 
 import org.opentdc.file.AbstractFileServiceProvider;
 import org.opentdc.events.EventModel;
 import org.opentdc.events.InvitationState;
-import org.opentdc.events.SalutationType;
 import org.opentdc.events.ServiceProvider;
 import org.opentdc.service.exception.DuplicateException;
 import org.opentdc.service.exception.InternalServerErrorException;
 import org.opentdc.service.exception.NotFoundException;
 import org.opentdc.service.exception.ValidationException;
-import org.opentdc.util.EmailSender;
-import org.opentdc.util.FreeMarkerConfig;
+// import org.opentdc.util.EmailSender;
+// import org.opentdc.util.FreeMarkerConfig;
 import org.opentdc.util.PrettyPrinter;
 
-import freemarker.template.Template;
+// import freemarker.template.Template;
 
 /**
  * A file-based or transient implementation of the Events service.
@@ -59,8 +57,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	
 	private static Map<String, EventModel> index = null;
 	private static final Logger logger = Logger.getLogger(FileServiceProvider.class.getName());
-	private EmailSender emailSender = null;
-	private static final String SUBJECT = "Einladung zum Arbalo Launch Event";
+//	private EmailSender emailSender = null;
+//	private static final String SUBJECT = "Einladung zum Arbalo Launch Event";
 
 	/**
 	 * Constructor.
@@ -79,8 +77,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 			for (EventModel _event : _events) {
 				index.put(_event.getId(), _event);
 			}
-			new FreeMarkerConfig(context);
-			emailSender = new EmailSender(context);
+//			new FreeMarkerConfig(context);
+//			emailSender = new EmailSender(context);
 			logger.info(_events.size() + " Events imported.");
 		}
 	}
@@ -95,6 +93,9 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 		int position,
 		int size
 	) {
+		logger.warning("EventsService.list() should not be called; returning empty list");
+		return new ArrayList<EventModel>();
+/*
 		ArrayList<EventModel> _events = new ArrayList<EventModel>(index.values());
 		Collections.sort(_events, EventModel.EventComparator);
 		ArrayList<EventModel> _selection = new ArrayList<EventModel>();
@@ -106,6 +107,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 		logger.info("list(<" + query + ">, <" + queryType + 
 				">, <" + position + ">, <" + size + ">) -> " + _selection.size() + " events.");
 		return _selection;
+		*/
 	}
 
 	/* (non-Javadoc)
@@ -115,6 +117,10 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	public EventModel create(
 		EventModel event) 
 	throws DuplicateException, ValidationException {
+		logger.warning("EventsService.create() should not be called; returning the same EventModel");
+		logger.info("create(" + PrettyPrinter.prettyPrintAsJSON(event) + ")");
+		return event;
+/*
 		logger.info("create(" + PrettyPrinter.prettyPrintAsJSON(event) + ")");
 		String _id = event.getId();
 		if (_id == null || _id == "") {
@@ -160,6 +166,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 			exportJson(index.values());
 		}
 		return event;
+		*/
 	}
 
 	/* (non-Javadoc)
@@ -183,10 +190,12 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	 */
 	@Override
 	public EventModel update(
+		HttpServletRequest request,
 		String id, 
 		EventModel event
 	) throws NotFoundException, ValidationException {
 		EventModel _event = index.get(id);
+		/*
 		if(_event == null) {
 			throw new NotFoundException("no event with ID <" + id
 					+ "> was found.");
@@ -211,9 +220,11 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 			throw new ValidationException("event <" + id + 
 					"> must contain a valid email address.");
 		}
+		*/
 		if (event.getInvitationState() == null) {
 			event.setInvitationState(InvitationState.INITIAL);
 		}
+		/*
 		if (event.getSalutation() == null) {
 			event.setSalutation(SalutationType.DU_M);
 		}
@@ -221,6 +232,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 		_event.setLastName(event.getLastName());
 		_event.setEmail(event.getEmail());
 		_event.setSalutation(event.getSalutation());
+		*/
 		_event.setInvitationState(event.getInvitationState());
 		_event.setComment(event.getComment());
 		_event.setModifiedAt(new Date());
@@ -240,6 +252,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	public void delete(
 		String id) 
 	throws NotFoundException, InternalServerErrorException {
+		logger.warning("EventsService.delete(" + id + ") should not be called; ignoring it");
+/*
 		EventModel _event = index.get(id);
 		if (_event == null) {
 			throw new NotFoundException("event <" + id
@@ -253,6 +267,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 		if (isPersistent) {
 			exportJson(index.values());
 		}
+		*/
 	}
 	
 	/**
@@ -260,6 +275,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	 * @param contactName the name of the contact
 	 * @return the corresponding email address
 	 */
+	/*
 	private String getEmailAddress(String contactName) {
 		logger.info("getEmailAddress(" + contactName + ")");
 		String _emailAddress = null;
@@ -282,11 +298,13 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	        logger.info("getEmailAddress(" + contactName + ") -> " + _emailAddress);
 	        return _emailAddress;	
 	}
+	*/
 	
 	/**
 	 * @param salutation
 	 * @return
 	 */
+	/*
 	private Template getTemplate(
 			SalutationType salutation, String contactName) {
 		String _templateName = null;
@@ -301,6 +319,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 		}
 		return FreeMarkerConfig.getTemplateByName(_templateName);
 	}
+	*/
 
 
 	/* (non-Javadoc)
@@ -309,6 +328,9 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	@Override
 	public String getMessage(String id) throws NotFoundException,
 			InternalServerErrorException {
+		String _msg = "EventsService.getMessage(" + id + ") should not be called; use InvitationsService instead";
+		logger.warning(_msg);
+/*
 		logger.info("getMessage(" + id + ")");
 		EventModel _model = read(id);
 		
@@ -321,6 +343,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
         		_root, 
         		getTemplate(_model.getSalutation(), _model.getContact()));
 		logger.info("getMessage(" + id + ") -> " + _msg);
+		*/
 		return _msg;
 	}
 
@@ -330,6 +353,9 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	@Override
 	public void sendMessage(String id) throws NotFoundException,
 			InternalServerErrorException {
+		logger.warning("EventsService.sendMessage(" + id + ") should not be called; ignoring it");
+
+		/*
 		logger.info("sendMessage(" + id + ")");
 		EventModel _model = read(id);
 
@@ -342,6 +368,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 		_model.setId(null);
 		_model.setInvitationState(InvitationState.SENT);
 		update(id, _model);
+		*/
 	}
 
 	/* (non-Javadoc)
@@ -349,6 +376,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	 */
 	@Override
 	public void sendAllMessages() throws InternalServerErrorException {
+		logger.warning("EventsService.sendAllMessages() should not be called; ignoring it");
+/*
 		logger.info("sendAllMessages()");
 		for (EventModel _model : index.values()) {
 			emailSender.sendMessage(
@@ -367,6 +396,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 				throw new InternalServerErrorException(_ex.getMessage());
 			}
 		}
+		*/
 	}
 
 	/* (non-Javadoc)
@@ -374,6 +404,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	 */
 	@Override
 	public void register(
+			HttpServletRequest request,
 			String id,
 			String comment) 
 	throws NotFoundException, ValidationException {
@@ -400,6 +431,7 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	 */
 	@Override
 	public void deregister(
+			HttpServletRequest request,
 			String id,
 			String comment) 
 	throws NotFoundException, ValidationException {
