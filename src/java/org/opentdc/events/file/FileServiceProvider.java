@@ -88,8 +88,8 @@ public class FileServiceProvider extends AbstractFileServiceProvider<EventModel>
 	 */
 	@Override
 	public ArrayList<EventModel> list(
-		String queryType,
 		String query,
+		String queryType,
 		int position,
 		int size
 	) {
